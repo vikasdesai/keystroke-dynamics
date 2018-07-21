@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <title>
+    Keystroke Dynamics Demo
+  </title>
+
+<head>
+  <link rel="stylesheet" type="text/css" href="styles.css" media="screen">
+
+  <script src="Chart.min.js"></script>
+  <script src="ml.min.js"></script>
+  <script src="math.min.js"></script>
+</head>
+<body>
+<div class="container">
+  <div class="chart-container" style="position: absolute: 0px; top: 0px; right: 0px; bottom: 0px;">
+    <canvas id="textEntry" width="1000" height="500" class="chartjs-render-monitor" style="display: block; height: 250px; width: 500px;"></canvas>
+    <table>
+      <tr>
+        <td rowspan="5"> 
+          <!-- Rounded switch -->
+          <label class="switch"> <input type="checkbox" id="testCheck"> <span class="slider round"></span> </label>
+        </td>
+        <th>Feature</th>
+        <th>Train</th>
+        <th>Test</th>
+      </tr>
+      <tr>
+        <td>DOWN-UP</td>
+        <td id=dutrain></td>
+        <td id=dutest></td>
+      </tr>
+      <tr>
+        <td>UP-DOWN</td>
+        <td id=udtrain></td>
+        <td id=udtest></td>
+      </tr>
+      <tr>
+        <td>DOWN-DOWN</td>
+        <td id=ddtrain></td>
+        <td id=ddtest></td>
+      </tr>
+      <tr>
+        <td>Count</td>
+        <td id=count></td>
+        <td></td>
+      </tr>
+    </table>
+  </div>
+  <div class="chart-container" style="position: absolute: 0px; top: 0px; right: 0px; bottom: 0px;">
+    <canvas id="DUChart" width="1000" height="500" class="chartjs-render-monitor" style="display: block; height: 250px; width: 500px;"></canvas>
+  </div>
+  <div class="chart-container" style="position: absolute: 0px; top: 0px; right: 0px; bottom: 0px;">
+    <canvas id="UDChart" width="1000" height="500" class="chartjs-render-monitor" style="display: block; height: 250px; width: 500px;"></canvas>
+  </div>
+  <div class="chart-container" style="position: absolute: 0px; top: 0px; right: 0px; bottom: 0px;">
+    <canvas id="DDChart" width="1000" height="500" class="chartjs-render-monitor" style="display: block; height: 250px; width: 500px;"></canvas>
+  </div>
+
+
+
+  <div class="chart-container" style="position: absolute: 0px; top: 0px; right: 0px; bottom: 0px;">
+    <H1 align=center style="color:blue; font-family:verdana; font-size:50"> Neural Network </H1>
+    <!--
+    <table>
+      <tr>
+        <th>Feature</th>
+        <th>Predicted</th>
+        <th>Observed</th>
+      </tr>
+      <tr>
+        <td>DOWN-UP</td>
+        <td id=dunnpred></td>
+        <td id=dunntest></td>
+      </tr>
+      <tr>
+        <td>UP-DOWN</td>
+        <td id=udnnpred></td>
+        <td id=udnntest></td>
+      </tr>
+      <tr>
+        <td>DOWN-DOWN</td>
+        <td id=ddnnpred></td>
+        <td id=ddnntest></td>
+      </tr>
+    </table>
+    -->
+  </div>
+  <div class="chart-container" style="position: absolute: 0px; top: 0px; right: 0px; bottom: 0px;">
+    <canvas id="DUNNChart" width="1000" height="500" class="chartjs-render-monitor" style="display: block; height: 250px; width: 500px;"></canvas>
+  </div>
+  <div class="chart-container" style="position: absolute: 0px; top: 0px; right: 0px; bottom: 0px;">
+    <canvas id="UDNNChart" width="1000" height="500" class="chartjs-render-monitor" style="display: block; height: 250px; width: 500px;"></canvas>
+  </div>
+  <div class="chart-container" style="position: absolute: 0px; top: 0px; right: 0px; bottom: 0px;">
+    <canvas id="DDNNChart" width="1000" height="500" class="chartjs-render-monitor" style="display: block; height: 250px; width: 500px;"></canvas>
+  </div>
+</div>
+
+<script src="keystroke.js"></script>
+</body>
+</html>
