@@ -1,20 +1,20 @@
-  canvas{
+canvas{
     -moz-user-select: none;
     -webkit-user-select: none;
     -ms-user-select: none;
-  }
-  .chart-container {
+}
+.chart-container {
     width: 800px;
     margin-left: 40px;
     margin-right: 40px;
     margin-bottom: 40px;
-  }
-  .container {
+}
+.container {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
-  }
+}
 
 /* The switch - the box around the slider */
 .switch {
@@ -75,7 +75,7 @@ input:checked + .slider:before {
   border-radius: 50%;
 }
 
-  table {
+table {
     font-family: arial, sans-serif;
     border-collapse: collapse;
     width: 100%;
