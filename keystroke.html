@@ -11,16 +11,46 @@
   <script src="Chart.min.js"></script>
   <script src="ml.min.js"></script>
   <script src="math.min.js"></script>
+  <script src="neataptic.js"></script>
+  <script src="keystroke.js"></script>
 </head>
 <body>
 <div class="container">
   <div class="chart-container" style="position: absolute: 0px; top: 0px; right: 0px; bottom: 0px;">
-    <canvas id="textEntry" width="1000" height="500" class="chartjs-render-monitor" style="display: block; height: 250px; width: 500px;"></canvas>
+    <H1 align=center style="font-family:verdana; font-size:30">Distance Classifier</H1>
+    <canvas id="textEntry" width="1000" height="500" class="chartjs-render-monitor" style="display: block; height: 250px; width: 800px;"></canvas>
     <table>
       <tr>
-        <td rowspan="5"> 
-          <!-- Rounded switch -->
-          <label class="switch"> <input type="checkbox" id="testCheck"> <span class="slider round"></span> </label>
+        <td rowspan=5>
+          <table>
+            <tr>
+              <td> 
+                <H4 style="font-family:verdana; font-size:20">Test Mode</H4>
+              </td> 
+              <td> 
+                <!-- Rounded switch -->
+                <label class="switch"> <input type="checkbox" id="testCheck" onclick="startTest()"> <span class="slider round"></span> </label>
+              </td>
+            </tr>
+            <tr>
+              <td> 
+                <H4 style="font-family:verdana; font-size:20">Neural Network</H4>
+              </td> 
+              <td> 
+                <!-- Rounded switch -->
+                <label class="switch"> <input type="checkbox" id="nnpredict" onclick="showNN()"> <span class="slider round"></span> </label>
+              </td>
+            </tr>
+            <tr>
+              <td> 
+                <H4 style="font-family:verdana; font-size:20">Neuro Evolution</H4>
+              </td> 
+              <td> 
+                <!-- Rounded switch -->
+                <label class="switch"> <input type="checkbox" id="nepredict" onclick="showNE()"> <span class="slider round"></span> </label>
+              </td>
+            </tr>
+          </table>
         </td>
         <th>Feature</th>
         <th>Train</th>
@@ -59,33 +89,30 @@
   </div>
 
 
-
   <div class="chart-container" style="position: absolute: 0px; top: 0px; right: 0px; bottom: 0px;">
-    <H1 align=center style="color:blue; font-family:verdana; font-size:50"> Neural Network </H1>
-    <!--
-    <table>
+    <H1 id="nnheader" align=center style="visibility: hidden; font-family:verdana; font-size:50"> Neural Network </H1>
+    <table id="nntable" style="visibility: hidden;">
       <tr>
         <th>Feature</th>
-        <th>Predicted</th>
-        <th>Observed</th>
+        <th>Neural Network</th>
+        <th>Distance Classifier</th>
       </tr>
       <tr>
         <td>DOWN-UP</td>
         <td id=dunnpred></td>
-        <td id=dunntest></td>
+        <td id=dunnsmd></td>
       </tr>
       <tr>
         <td>UP-DOWN</td>
         <td id=udnnpred></td>
-        <td id=udnntest></td>
+        <td id=udnnsmd></td>
       </tr>
       <tr>
         <td>DOWN-DOWN</td>
         <td id=ddnnpred></td>
-        <td id=ddnntest></td>
+        <td id=ddnnsmd></td>
       </tr>
     </table>
-    -->
   </div>
   <div class="chart-container" style="position: absolute: 0px; top: 0px; right: 0px; bottom: 0px;">
     <canvas id="DUNNChart" width="1000" height="500" class="chartjs-render-monitor" style="display: block; height: 250px; width: 500px;"></canvas>
@@ -96,8 +123,58 @@
   <div class="chart-container" style="position: absolute: 0px; top: 0px; right: 0px; bottom: 0px;">
     <canvas id="DDNNChart" width="1000" height="500" class="chartjs-render-monitor" style="display: block; height: 250px; width: 500px;"></canvas>
   </div>
+
+
+  <div class="chart-container" style="position: absolute: 0px; top: 0px; right: 0px; bottom: 0px;">
+    <H1 id="neheader" align=center style="visibility: hidden; font-family:verdana; font-size:50"> Neuro-Evolutionary Network </H1>
+    <table id="netable" style="visibility: hidden;">
+      <tr>
+        <th>Feature</th>
+        <th>Neuro-Evolutionary Network</th>
+        <th>Neural Network</th>
+        <th>Distance Classifier</th>
+      </tr>
+      <tr>
+        <td>DOWN-UP</td>
+        <td id=dunepred></td>
+        <td id=dunnpred_></td>
+        <td id=dunnsmd_></td>
+      </tr>
+      <tr>
+        <td>UP-DOWN</td>
+        <td id=udnepred></td>
+        <td id=udnnpred_></td>
+        <td id=udnnsmd_></td>
+      </tr>
+      <tr>
+        <td>DOWN-DOWN</td>
+        <td id=ddnepred></td>
+        <td id=ddnnpred_></td>
+        <td id=ddnnsmd_></td>
+      </tr>
+    </table>
+  </div>
+  <div class="chart-container" style="position: absolute: 0px; top: 0px; right: 0px; bottom: 0px;">
+    <canvas id="DUNEChart" width="1000" height="500" class="chartjs-render-monitor" style="display: block; height: 250px; width: 500px;"></canvas>
+  </div>
+  <div class="chart-container" style="position: absolute: 0px; top: 0px; right: 0px; bottom: 0px;">
+    <canvas id="UDNEChart" width="1000" height="500" class="chartjs-render-monitor" style="display: block; height: 250px; width: 500px;"></canvas>
+  </div>
+  <div class="chart-container" style="position: absolute: 0px; top: 0px; right: 0px; bottom: 0px;">
+    <canvas id="DDNEChart" width="1000" height="500" class="chartjs-render-monitor" style="display: block; height: 250px; width: 500px;"></canvas>
+  </div>
+
+
+  <div class="chart-container" style="position: absolute: 0px; top: 0px; right: 0px; bottom: 0px; width: 500px">
+    <canvas id="DU-UD" class="chartjs-render-monitor" style="display: block; height: 250px; width: 500px;"></canvas>
+  </div>
+  <div class="chart-container" style="position: absolute: 0px; top: 0px; right: 0px; bottom: 0px; width: 500px">
+    <canvas id="UD-DD" class="chartjs-render-monitor" style="display: block; height: 250px; width: 500px;"></canvas>
+  </div>
+  <div class="chart-container" style="position: absolute: 0px; top: 0px; right: 0px; bottom: 0px; width: 500px">
+    <canvas id="DD-DU" class="chartjs-render-monitor" style="display: block; height: 250px; width: 500px;"></canvas>
+  </div>
 </div>
 
-<script src="keystroke.js"></script>
 </body>
 </html>

@@ -44,6 +44,36 @@ function createDefaultChart( ctx, title, maxy) {
   });
 }
 
+function createScatterChart( ctx, title) {
+  return new Chart(ctx, {
+    type: 'scatter',
+    data: {
+        datasets: []
+    },
+    options: {
+      title: {
+          display: true,
+          text: title
+      },
+      legend: {
+          display: false
+      },
+      scales: {
+          xAxes: [{
+              ticks: {
+                  beginAtZero:true
+              }
+          }],
+          yAxes: [{
+              ticks: {
+                  beginAtZero:true
+              }
+          }]
+      }
+    }
+  });
+}
+
 function createNN(hiddenLayers, activation) {
   var options = {};
   options.hiddenLayers = hiddenLayers;
@@ -66,6 +96,14 @@ function avgAbsDevPath(data) {
   return columns.map(function(row) {
     return math.mad(row);
   });
+}
+
+function smd_nn(data, path, nnpred) {
+  var avgAbsDev = avgAbsDevPath(data);
+
+  return nnpred.reduce(function(sum, val, i) {
+    return sum + Math.abs(path[i] - val) / avgAbsDev[i];
+  }, 0);
 }
 
 function smd(data, path) {
@@ -100,6 +138,7 @@ function minsmd(duseq, udseq, ddseq) {
   return [mindu,minud,mindd];
 }
 
+//Same as smd above - duplicated because of refactoring can be replace with smd
 function scaledManhattanDist(x,y) {
   var columns = math.transpose(x);
   var avgAbsDev = columns.map(function(row){
@@ -131,27 +170,123 @@ function addDataToChart(myChart, newdata, color, showline) {
   myChart.update();
 }
 
-var ductx = document.getElementById("DUChart").getContext('2d');
-var DUChart = createDefaultChart(ductx, "DOWN-UP (Dwell Time)", 350);
+async function startTest() {
+  if (document.getElementById("testCheck").checked) {
+    var l = DUseq[0].length;
+    if (l > 0) {
+      var l1 = Math.ceil(l / 2);
+      var l2 = Math.ceil(l1 / 2);
+      //var options = { hiddenLayers : [l1,l2,l1] };
+      var options = { hiddenLayers : [l1] };
 
-var udctx = document.getElementById("UDChart").getContext('2d');
-var UDChart = createDefaultChart(udctx, "UP-DOWN (Flight Time)", 350);
+      dunn = new ML.FNN(options);
+      dunn.activation = "exponential-elu"; //rectified linear unit (ReLU)
+      dunn.train(DUseq, DUseq);
 
-var ddctx = document.getElementById("DDChart").getContext('2d');
-var DDChart = createDefaultChart(ddctx, "DOWN-DOWN (Speed)", 350);
+      udnn = new ML.FNN(options);
+      udnn.activation = "exponential-elu";
+      udnn.train(UDseq, UDseq);
 
-var txtCanvas = document.getElementById("textEntry");
-var txtctx = txtCanvas.getContext("2d");
-txtctx.font = "170px verdana";
+      ddnn = new ML.FNN(options);
+      ddnn.activation = "exponential-elu";
+      ddnn.train(DDseq, DDseq);
 
-var dunnctx = document.getElementById("DUNNChart").getContext('2d');
-var DUNNChart = createDefaultChart(dunnctx, "DOWN-UP (Dwell Time)", 350);
+      //Neuro-Evolutionary Network - neataptic.js
+      dunedata = DUseq.map(function(data) { return {input:data, output:data};});
+      udnedata = UDseq.map(function(data) { return {input:data, output:data};});
+      ddnedata = DDseq.map(function(data) { return {input:data, output:data};});
 
-var udnnctx = document.getElementById("UDNNChart").getContext('2d');
-var UDNNChart = createDefaultChart(udnnctx, "UP-DOWN (Flight Time)", 350);
+      dunenn = neataptic.architect.Perceptron( l, l1, l);
+      udnenn = neataptic.architect.Perceptron( l-1, l1, l-1);
+      ddnenn = neataptic.architect.Perceptron( l-1, l1, l-1);
 
-var ddnnctx = document.getElementById("DDNNChart").getContext('2d');
-var DDNNChart = createDefaultChart(ddnnctx, "DOWN-DOWN (Speed)", 350);
+      neopts = {
+        mutation: neataptic.methods.mutation.FFW,
+        equal: true,
+        popsize: 100,
+        elitism: 10,
+        log: 100,
+        error: 100, //0.03,
+        iterations: 1000,
+        mutationRate: 0.5
+      };
+
+      neDone = await Promise.all([
+        dunenn.evolve(dunedata, neopts),
+        udnenn.evolve(udnedata, neopts),
+        ddnenn.evolve(ddnedata, neopts)
+      ]);
+      console.log(neDone);
+    }
+  }
+}
+
+function initCharts() {
+  ductx = document.getElementById("DUChart").getContext('2d');
+  DUChart = createDefaultChart(ductx, "DOWN-UP (Dwell Time)", 350);
+
+  udctx = document.getElementById("UDChart").getContext('2d');
+  UDChart = createDefaultChart(udctx, "UP-DOWN (Flight Time)", 350);
+
+  ddctx = document.getElementById("DDChart").getContext('2d');
+  DDChart = createDefaultChart(ddctx, "DOWN-DOWN (Speed)", 350);
+
+  txtCanvas = document.getElementById("textEntry");
+  txtctx = txtCanvas.getContext("2d");
+  txtctx.font = "150px verdana";
+
+  dunnctx = document.getElementById("DUNNChart").getContext('2d');
+  DUNNChart = createDefaultChart(dunnctx, "DOWN-UP (Dwell Time)", 350);
+
+  udnnctx = document.getElementById("UDNNChart").getContext('2d');
+  UDNNChart = createDefaultChart(udnnctx, "UP-DOWN (Flight Time)", 350);
+
+  ddnnctx = document.getElementById("DDNNChart").getContext('2d');
+  DDNNChart = createDefaultChart(ddnnctx, "DOWN-DOWN (Speed)", 350);
+
+  dunectx = document.getElementById("DUNEChart").getContext('2d');
+  DUNEChart = createDefaultChart(dunectx, "DOWN-UP (Dwell Time)", 350);
+
+  udnectx = document.getElementById("UDNEChart").getContext('2d');
+  UDNEChart = createDefaultChart(udnectx, "UP-DOWN (Flight Time)", 350);
+
+  ddnectx = document.getElementById("DDNEChart").getContext('2d');
+  DDNEChart = createDefaultChart(ddnectx, "DOWN-DOWN (Speed)", 350);
+
+  duudctx = document.getElementById("DU-UD").getContext('2d');
+  DUUDChart = createScatterChart(duudctx, "DU-UD");
+
+  udddctx = document.getElementById("UD-DD").getContext('2d');
+  UDDDChart = createScatterChart(udddctx, "UD-DD");
+
+  ddductx = document.getElementById("DD-DU").getContext('2d');
+  DDDUChart = createScatterChart(ddductx, "DD-DU");
+}
+
+function showNN() {
+  document.getElementById("nnheader").style.visibility = "visible";
+  document.getElementById("nntable").style.visibility = "visible";
+
+  if (document.getElementById("testCheck").checked == false) {
+    document.getElementById("nnpredict").checked = false;
+    alert("Please enable Test for this to work");
+  }
+}
+
+function showNE() {
+  if (document.getElementById("testCheck").checked == false) {
+    document.getElementById("nepredict").checked = false;
+    alert("Please enable Test for this to work");
+    return;
+  }
+  if (typeof neDone == "undefined") {
+    alert("Sorry Still Evolving!!!");
+    document.getElementById("nepredict").checked = false;
+  } else {
+  document.getElementById("neheader").style.visibility = "visible";
+  document.getElementById("netable").style.visibility = "visible";
+  }
+}
 
 function updateMinMaxTrain() {
   var maxTrainError = maxsmd(DUseq, UDseq, DDseq);
@@ -164,32 +299,62 @@ function updateMinMaxTrain() {
 
 function captureKeyEvent(e) {
 	kevents.push(e);
-	newevent = {event :  e.type, code : e.code, keycode :  e.keyCode, keytime : e.timeStamp };
-	keyevents.push(newevent);
+	//newevent = {event :  e.type, code : e.code, keycode :  e.keyCode, keytime : e.timeStamp };
+	//keyevents.push(newevent);
 	if (e.key.length > 1) {
+    if (e.key === "Backspace") {
+      txtctx.clearRect(0,0,txtCanvas.width,txtCanvas.height);
+      txtctx.strokeText(testText,0,txtCanvas.height/2);
+      currText = "";
+
+      DU = [];
+      UD = [];
+      DD = [];
+      return
+    }
 		if (e.key === "Enter" && e.type === "keyup") {
+      if (UD.length != (DU.length - 1) || DD.length != (DU.length - 1)) {
+        console.log(DU,UD,DD);
+        alert("Please type slowly!!!");
+        console.log(currText);
+        txtctx.clearRect(0,0,txtCanvas.width,txtCanvas.height);
+        txtctx.strokeText(testText,0,txtCanvas.height/2);
+        currText = "";
+
+        DU = [];
+        UD = [];
+        DD = [];
+  	    lastdown = lastup = -1;
+        return
+      }
+
       if (testText === "") {
         testText = currText;
       }
+
+      txtctx.clearRect(0,0,txtCanvas.width,txtCanvas.height);
+      txtctx.strokeText(testText,0,txtCanvas.height/2);
+
       if (currText !== testText) {
         alert("You entered [" + currText + "], Please Enter ["+testText+"]");
   	    DU = [];
   	    UD = [];
   	    DD = [];
 
-  	    lastdown = lastup = -1;
-        txtctx.clearRect(0,0,txtCanvas.width,txtCanvas.height);
-        txtctx.strokeText(testText,0,txtCanvas.height/2);
         currText = "";
+  	    lastdown = lastup = -1;
         return;
       }
-      txtctx.clearRect(0,0,txtCanvas.width,txtCanvas.height);
-      txtctx.strokeText(testText,0,txtCanvas.height/2);
+
       currText = "";
 
       //console.log("DU :", scaledManhattanDist(DUseq,DU));
       //console.log("UD :", scaledManhattanDist(UDseq,UD));
       //console.log("DD :", scaledManhattanDist(DDseq,DD));
+
+      duavg = math.mean(DU);
+      udavg = math.mean(UD);
+      ddavg = math.mean(DD);
 
       var test = document.getElementById("testCheck").checked;
 
@@ -202,48 +367,96 @@ function captureKeyEvent(e) {
           removeLastFromChart(DUChart);
           removeLastFromChart(UDChart);
           removeLastFromChart(DDChart);
+
+          removeLastFromChart(DUUDChart);
+          removeLastFromChart(UDDDChart);
+          removeLastFromChart(DDDUChart);
         }
         addDataToChart(DUChart, DU, 'rgba(0,0,255,0.5)', true);
         addDataToChart(UDChart, UD, 'rgba(0,0,255,0.5)', true);
         addDataToChart(DDChart, DD, 'rgba(0,0,255,0.5)', true);
+
+        addDataToChart(DUUDChart, [{ x: Math.round(duavg), y: Math.round(udavg) }], 'rgba(0,0,255,1)', false);
+        addDataToChart(UDDDChart, [{ x: Math.round(udavg), y: Math.round(ddavg) }], 'rgba(0,0,255,1)', false);
+        addDataToChart(DDDUChart, [{ x: Math.round(ddavg), y: Math.round(duavg) }], 'rgba(0,0,255,1)', false);
 
 			  DUtest.push(DU);
 			  UDtest.push(UD);
 			  DDtest.push(DD);
 
         if (typeof dunn == "undefined") {
-          var l1 = Math.ceil(DU.length / 2);
-          var l2 = Math.ceil(DU.length / 4);
-          var options = { hiddenLayers : [l1,l2,l1] };
-
-          dunn = new ML.FNN(options);
-          dunn.activation = "exponential-elu"; //rectified linear unit (ReLU)
-          dunn.train(DUseq, DUseq);
-
-          udnn = new ML.FNN(options);
-          udnn.activation = "exponential-elu";
-          udnn.train(UDseq, UDseq);
-
-          ddnn = new ML.FNN(options);
-          ddnn.activation = "exponential-elu";
-          ddnn.train(DDseq, DDseq);
+          console.log("No Neural Network create - Failure!!!");
         }
 
-        DUNNChart.data.datasets = [];
-        UDNNChart.data.datasets = [];
-        DDNNChart.data.datasets = [];
+        //Calculate and Display Neural Network predictions
+        if (document.getElementById("nnpredict").checked) {
+          DUNNChart.data.datasets = [];
+          UDNNChart.data.datasets = [];
+          DDNNChart.data.datasets = [];
 
-        dupred = dunn.predict([DU]);
-        udpred = udnn.predict([UD]);
-        ddpred = ddnn.predict([DD]);
+          dupred = dunn.predict([DU]);
+          udpred = udnn.predict([UD]);
+          ddpred = ddnn.predict([DD]);
 
-        addDataToChart(DUNNChart, dupred[0], 'rgba(0,255,0,0.5)', true);
-        addDataToChart(UDNNChart, udpred[0], 'rgba(0,255,0,0.5)', true);
-        addDataToChart(DDNNChart, ddpred[0], 'rgba(0,255,0,0.5)', true);
+          document.getElementById("dunnpred").innerHTML = Math.round(smd_nn(DUseq, DU, dupred[0]));
+          document.getElementById("udnnpred").innerHTML = Math.round(smd_nn(UDseq, UD, udpred[0]));
+          document.getElementById("ddnnpred").innerHTML = Math.round(smd_nn(DDseq, DD, ddpred[0]));
 
-        addDataToChart(DUNNChart, DU, 'rgba(0,0,255,0.5)', true);
-        addDataToChart(UDNNChart, UD, 'rgba(0,0,255,0.5)', true);
-        addDataToChart(DDNNChart, DD, 'rgba(0,0,255,0.5)', true);
+          document.getElementById("dunnsmd").innerHTML = document.getElementById("dutest").innerHTML;
+          document.getElementById("udnnsmd").innerHTML = document.getElementById("udtest").innerHTML;
+          document.getElementById("ddnnsmd").innerHTML = document.getElementById("ddtest").innerHTML;
+
+          addDataToChart(DUNNChart, dupred[0], 'rgba(0,255,0,0.5)', true);
+          addDataToChart(UDNNChart, udpred[0], 'rgba(0,255,0,0.5)', true);
+          addDataToChart(DDNNChart, ddpred[0], 'rgba(0,255,0,0.5)', true);
+
+          addDataToChart(DUNNChart, DU, 'rgba(0,0,255,0.5)', true);
+          addDataToChart(UDNNChart, UD, 'rgba(0,0,255,0.5)', true);
+          addDataToChart(DDNNChart, DD, 'rgba(0,0,255,0.5)', true);
+
+          //addDataToChart(DUNNChart, meanPath(DUseq), 'rgba(255,0,0,0.5)', true);
+          //addDataToChart(UDNNChart, meanPath(UDseq), 'rgba(255,0,0,0.5)', true);
+          //addDataToChart(DDNNChart, meanPath(DDseq), 'rgba(255,0,0,0.5)', true);
+        }
+
+        //Calculate and Display Neuro-Evolutionary Network predictions
+        if (document.getElementById("nepredict").checked) {
+          DUNEChart.data.datasets = [];
+          UDNEChart.data.datasets = [];
+          DDNEChart.data.datasets = [];
+
+          dunepred = dunenn.activate(DU);
+          udnepred = udnenn.activate(UD);
+          ddnepred = ddnenn.activate(DD);
+
+          document.getElementById("dunepred").innerHTML = Math.round(smd_nn(DUseq, DU, dunepred));
+          document.getElementById("udnepred").innerHTML = Math.round(smd_nn(UDseq, UD, udnepred));
+          document.getElementById("ddnepred").innerHTML = Math.round(smd_nn(DDseq, DD, ddnepred));
+
+          document.getElementById("dunnpred_").innerHTML = document.getElementById("dunnpred").innerHTML;
+          document.getElementById("udnnpred_").innerHTML = document.getElementById("udnnpred").innerHTML;
+          document.getElementById("ddnnpred_").innerHTML = document.getElementById("ddnnpred").innerHTML;
+
+          document.getElementById("dunnsmd_").innerHTML = document.getElementById("dutest").innerHTML;
+          document.getElementById("udnnsmd_").innerHTML = document.getElementById("udtest").innerHTML;
+          document.getElementById("ddnnsmd_").innerHTML = document.getElementById("ddtest").innerHTML;
+
+          addDataToChart(DUNEChart, dunepred, 'rgba(0,0,0,0.5)', true);
+          addDataToChart(UDNEChart, udnepred, 'rgba(0,0,0,0.5)', true);
+          addDataToChart(DDNEChart, ddnepred, 'rgba(0,0,0,0.5)', true);
+
+          addDataToChart(DUNEChart, DU, 'rgba(0,0,255,0.5)', true);
+          addDataToChart(UDNEChart, UD, 'rgba(0,0,255,0.5)', true);
+          addDataToChart(DDNEChart, DD, 'rgba(0,0,255,0.5)', true);
+
+          //addDataToChart(DUNEChart, dupred[0], 'rgba(0,255,0,0.5)', true);
+          //addDataToChart(UDNEChart, udpred[0], 'rgba(0,255,0,0.5)', true);
+          //addDataToChart(DDNEChart, ddpred[0], 'rgba(0,255,0,0.5)', true);
+
+          //addDataToChart(DUNEChart, meanPath(DUseq), 'rgba(255,0,0,0.5)', true);
+          //addDataToChart(UDNEChart, meanPath(UDseq), 'rgba(255,0,0,0.5)', true);
+          //addDataToChart(DDNEChart, meanPath(DDseq), 'rgba(255,0,0,0.5)', true);
+        }
 
 			  DU = [];
 			  UD = [];
@@ -251,12 +464,12 @@ function captureKeyEvent(e) {
 
 			  lastdown = lastup = -1;
         return;
-      } else {
-        document.getElementById("dutrain").innerHTML = Math.round(scaledManhattanDist(DUseq,DU));
-        document.getElementById("udtrain").innerHTML = Math.round(scaledManhattanDist(UDseq,UD));
-        document.getElementById("ddtrain").innerHTML = Math.round(scaledManhattanDist(DDseq,DD));
-        document.getElementById("count").innerHTML = DUseq.length;
       }
+
+      document.getElementById("dutrain").innerHTML = Math.round(scaledManhattanDist(DUseq,DU));
+      document.getElementById("udtrain").innerHTML = Math.round(scaledManhattanDist(UDseq,UD));
+      document.getElementById("ddtrain").innerHTML = Math.round(scaledManhattanDist(DDseq,DD));
+      document.getElementById("count").innerHTML = DUseq.length;
 
 			DUseq.push(DU);
 			UDseq.push(UD);
@@ -276,6 +489,10 @@ function captureKeyEvent(e) {
       addDataToChart(UDChart, meanPath(UDseq), 'rgba(255,0,0,0.5)', true);
       addDataToChart(DDChart, meanPath(DDseq), 'rgba(255,0,0,0.5)', true);
 
+      addDataToChart(DUUDChart, [{ x: duavg, y: udavg }], 'rgba(255,0,0,1)', false);
+      addDataToChart(UDDDChart, [{ x: udavg, y: ddavg }], 'rgba(255,0,0,1)', false);
+      addDataToChart(DDDUChart, [{ x: ddavg, y: duavg }], 'rgba(255,0,0,1)', false);
+
 			DU = [];
 			UD = [];
 			DD = [];
@@ -287,8 +504,6 @@ function captureKeyEvent(e) {
 
 	if ( e.type ===  "keydown" ) {
     currText += e.key;
-    txtctx.fillText(currText,0,txtCanvas.height/2);
-		keydownevents.push(newevent);
 		if (lastdown >= 0) {
 			DD.push(e.timeStamp - lastdown);
 		}
@@ -296,14 +511,17 @@ function captureKeyEvent(e) {
 			UD.push(e.timeStamp - lastup);
 		}
 		lastdown = e.timeStamp;
+    txtctx.fillText(currText,0,txtCanvas.height/2);
+		//keydownevents.push(newevent);
 	} else {
 		if (lastdown >= 0) {
 			DU.push(e.timeStamp - lastdown);
 		}
 		lastup = e.timeStamp;
-		keyupevents.push(newevent);
+		//keyupevents.push(newevent);
 	};
 }
 
+window.onload = initCharts;
 document.onkeydown = captureKeyEvent;
 document.onkeyup = captureKeyEvent;
