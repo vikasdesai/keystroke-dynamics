@@ -1,3 +1,12 @@
+/*!
+ * Keystroke Dynamics
+ *
+ * This file is licensed under the MIT license
+ *
+ *   Vikas Desai - vikasdesai.github.io
+ *
+ */
+
 var kevents = [];
 var keyevents = [];
 var keyupevents = [];
